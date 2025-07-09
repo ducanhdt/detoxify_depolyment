@@ -9,3 +9,5 @@ tqdm==4.66.5
 datasets
 
 python-dotenv
+google-cloud-logging
+google-cloud-storage

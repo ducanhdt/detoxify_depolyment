@@ -36,3 +36,8 @@ For more details about TextDetox 2025, visit the [competition page](https://coda
   - Configure vLLM to serve the fine-tuned model, loading both LoRA adapters.
   - Design the API call flow, including prompt construction and interaction with the deployed vLLM instance.
   - Add a foundational middleware layer for prompt security, mitigating potential leakage.
+
+### 10/7/2025
+- Set up logging:
+  - Set up logging to Google cloud logging, auto save log to Google bigquery to optimize code and for feature analysis
+  - Read vLLM system metric and API call result to log
