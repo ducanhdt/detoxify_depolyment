@@ -78,5 +78,8 @@ docker run --runtime nvidia --gpus all \
     -p 8000:8000 \
     --ipc=host \
     vllm/vllm-openai:latest \
-    --model Qwen/Qwen3-0.6B
-    --model google/gemma-3-1b-it
+    --enable-lora \
+    --model  unsloth/gemma-3-12b-it-bnb-4bit \
+    --lora-modules seen-language=anhdtd/gemma-3-12b-textDetox-2025-seen-language \
+                   unseen-language=anhdtd/gemma-3-12b-textDetox-2025-unseen-language
+    

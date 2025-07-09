@@ -25,8 +25,14 @@ For more details about TextDetox 2025, visit the [competition page](https://coda
 
 ## Changelog
 
-### 7/8/2025
+### 8/7/2025
 - **Set up Terraform** to create a GCP GPU instance that:
   - Automatically installs Docker and GPU drivers
   - Runs the vLLM service with Docker Compose to host public LLMs from Hugging Face
   - Configures SSH keys for instance access
+
+### 9/7/2025
+- Develop FastAPI Inference Endpoint:
+  - Configure vLLM to serve the fine-tuned model, loading both LoRA adapters.
+  - Design the API call flow, including prompt construction and interaction with the deployed vLLM instance.
+  - Add a foundational middleware layer for prompt security, mitigating potential leakage.

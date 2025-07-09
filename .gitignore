@@ -2,3 +2,4 @@ credentials.json
 *.tfvars
 .terraform*
 .env
+*__pycache__*

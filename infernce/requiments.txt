@@ -1,0 +1,11 @@
+fastapi
+httpx
+uvicorn
+pydantic
+
+jieba==0.42.1
+pandas==2.2.2
+tqdm==4.66.5
+datasets
+
+python-dotenv
