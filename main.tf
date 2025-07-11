@@ -5,6 +5,21 @@ provider "google" {
   zone    = var.zone
 }
 
+
+# Create a dedicated service account for your VM
+resource "google_service_account" "gemma_vm_service_account" {
+  account_id   = "gemma-vm-service-account"
+  display_name = "Service Account for Gemma L4 VM"
+  project      = var.project_id
+}
+
+# Grant the service account permissions to write logs
+resource "google_project_iam_member" "gemma_vm_logging_writer" {
+  project = var.project_id
+  role    = "roles/logging.logWriter"
+  member  = "serviceAccount:${google_service_account.gemma_vm_service_account.email}"
+}
+
 resource "google_compute_instance" "gemma_l4_vm" {
   name         = "gemma-l4-vm"
   machine_type = "g2-standard-4"
@@ -48,10 +63,13 @@ resource "google_compute_instance" "gemma_l4_vm" {
     automatic_restart   = false
     provisioning_model  = "STANDARD"
   }
-
   service_account {
-    scopes = ["https://www.googleapis.com/auth/cloud-platform"]
+  email  = google_service_account.gemma_vm_service_account.email
+    scopes = ["https://www.googleapis.com/auth/cloud-platform", "https://www.googleapis.com/auth/logging.write"] # Add specific logging scope
   }
+  #service_account {
+  #  scopes = ["https://www.googleapis.com/auth/cloud-platform"]
+  #}
 }
 
 resource "google_compute_firewall" "allow-ssh-http" {
@@ -77,6 +95,7 @@ resource "google_project_service" "logging_api" {
   disable_on_destroy = false # Set to true if you want to disable the API on `terraform destroy`
 }
 
+
 # 2. Create a BigQuery Dataset for analytical logs (for batch processing)
 resource "google_bigquery_dataset" "llm_logs_dataset" {
   dataset_id = "llm_detox_logs_dataset"
@@ -94,94 +113,4 @@ resource "google_storage_bucket" "llm_logs_archive_bucket" {
   storage_class = "ARCHIVE" # Cheaper for long-term storage
   force_destroy = false # Set to true to allow deletion of non-empty buckets on `terraform destroy`
   depends_on    = [google_project_service.logging_api]
-}
-
-# 4. Create Log Sinks to route specific logs
-
-# Sink for llm-detox-inference-logs to BigQuery
-resource "google_logging_project_sink" "inference_logs_to_bigquery" {
-  name        = "llm-detox-inference-to-bigquery"
-  project     = var.project_id
-  destination = "bigquery.googleapis.com/projects/${var.project_id}/datasets/${google_bigquery_dataset.llm_logs_dataset.dataset_id}"
-  filter      = "logName=\"projects/${var.project_id}/logs/llm-detox-inference-logs\""
-
-  # Ensure BigQuery dataset exists before creating the sink
-  depends_on = [google_bigquery_dataset.llm_logs_dataset]
-
-  # Grant BigQuery data editor role to the sink's writer identity
-  # This is crucial for the sink to write logs to BigQuery
-  lifecycle {
-    create_before_destroy = true
-  }
-}
-
-resource "google_project_iam_member" "inference_logs_bigquery_writer" {
-  project = var.project_id
-  role    = "roles/bigquery.dataEditor"
-  member  = google_logging_project_sink.inference_logs_to_bigquery.writer_identity
-  depends_on = [google_logging_project_sink.inference_logs_to_bigquery]
-}
-
-
-# Sink for vllm-metrics-snapshot-logs to BigQuery
-resource "google_logging_project_sink" "metrics_logs_to_bigquery" {
-  name        = "vllm-metrics-snapshot-to-bigquery"
-  project     = var.project_id
-  destination = "bigquery.googleapis.com/projects/${var.project_id}/datasets/${google_bigquery_dataset.llm_logs_dataset.dataset_id}"
-  filter      = "logName=\"projects/${var.project_id}/logs/vllm-metrics-snapshot-logs\""
-
-  depends_on = [google_bigquery_dataset.llm_logs_dataset]
-
-  lifecycle {
-    create_before_destroy = true
-  }
-}
-
-resource "google_project_iam_member" "metrics_logs_bigquery_writer" {
-  project = var.project_id
-  role    = "roles/bigquery.dataEditor"
-  member  = google_logging_project_sink.metrics_logs_to_bigquery.writer_identity
-  depends_on = [google_logging_project_sink.metrics_logs_to_bigquery]
-}
-
-# Sink for llm-detox-inference-logs to Cloud Storage (for archival)
-resource "google_logging_project_sink" "inference_logs_to_gcs" {
-  name        = "llm-detox-inference-to-gcs"
-  project     = var.project_id
-  destination = "storage.googleapis.com/${google_storage_bucket.llm_logs_archive_bucket.name}"
-  filter      = "logName=\"projects/${var.project_id}/logs/llm-detox-inference-logs\""
-
-  depends_on = [google_storage_bucket.llm_logs_archive_bucket]
-
-  lifecycle {
-    create_before_destroy = true
-  }
-}
-
-resource "google_project_iam_member" "inference_logs_gcs_writer" {
-  project = var.project_id
-  role    = "roles/storage.objectCreator"
-  member  = google_logging_project_sink.inference_logs_to_gcs.writer_identity
-  depends_on = [google_logging_project_sink.inference_logs_to_gcs]
-}
-
-# Sink for vllm-metrics-snapshot-logs to Cloud Storage (for archival)
-resource "google_logging_project_sink" "metrics_logs_to_gcs" {
-  name        = "vllm-metrics-snapshot-to-gcs"
-  project     = var.project_id
-  destination = "storage.googleapis.com/${google_storage_bucket.llm_logs_archive_bucket.name}"
-  filter      = "logName=\"projects/${var.project_id}/logs/vllm-metrics-snapshot-logs\""
-
-  depends_on = [google_storage_bucket.llm_logs_archive_bucket]
-
-  lifecycle {
-    create_before_destroy = true
-  }
-}
-
-resource "google_project_iam_member" "metrics_logs_gcs_writer" {
-  project = var.project_id
-  role    = "roles/storage.objectCreator"
-  member  = google_logging_project_sink.metrics_logs_to_gcs.writer_identity
-  depends_on = [google_logging_project_sink.metrics_logs_to_gcs]
 }
