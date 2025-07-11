@@ -54,6 +54,27 @@ services:
       - ./credentials.json:/app/credentials.json:ro
     restart: unless-stopped
 
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus-service
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-storage:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    networks:
+      - llm-network
+    depends_on:
+      - vllm
+    restart: unless-stopped
+
   grafana:
     image: grafana/grafana:latest
     container_name: grafana-service
@@ -68,7 +89,7 @@ services:
       - grafana-storage:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning
     depends_on:
-      - vllm
+      - prometheus
     restart: unless-stopped
 
 networks:
@@ -77,4 +98,6 @@ networks:
 
 volumes:
   grafana-storage:
+    driver: local
+  prometheus-storage:
     driver: local
