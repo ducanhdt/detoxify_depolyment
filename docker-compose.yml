@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  vllm:
+    image: vllm/vllm-openai:latest
+    container_name: vllm-server
+    ports:
+      - "8000:8000"
+    volumes:
+      - ~/.cache/huggingface:/root/.cache/huggingface
+    command: >
+      --enable-lora
+      --model unsloth/gemma-3-12b-it-bnb-4bit
+      --lora-modules seen-language=anhdtd/gemma-3-12b-textDetox-2025-seen-language
+                     unseen-language=anhdtd/gemma-3-12b-textDetox-2025-unseen-language
+    shm_size: '8gb'
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    networks:
+      - llm-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  fastapi-service:
+    build:
+      context: ./infernce
+      dockerfile: Dockerfile
+    container_name: fastapi-detox-service
+    ports:
+      - "8080:8080"
+    environment:
+      - vLLM_API=vllm
+      - GCP_PROJECT_ID=${GCP_PROJECT_ID:-your-gcp-project-id}
+    depends_on:
+      vllm:
+        condition: service_healthy
+    networks:
+      - llm-network
+    volumes:
+      - ./infernce:/app
+      - ./credentials.json:/app/credentials.json:ro
+    restart: unless-stopped
+
+networks:
+  llm-network:
+    driver: bridge
