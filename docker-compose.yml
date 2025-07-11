@@ -30,7 +30,7 @@ services:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
       timeout: 10s
-      retries: 3
+      retries: 20
       start_period: 60s
 
   fastapi-service:
@@ -41,8 +41,8 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - vLLM_API=vllm
-      - GCP_PROJECT_ID=${GCP_PROJECT_ID:-your-gcp-project-id}
+      - vLLM_API=localhost
+      - GCP_PROJECT_ID=meta-triode-457409-a9
     depends_on:
       vllm:
         condition: service_healthy

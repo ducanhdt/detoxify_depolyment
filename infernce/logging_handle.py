@@ -49,14 +49,6 @@ def setup_cloud_logging(gcp_project_id: str, inference_log_name: str, metrics_lo
     inference_logger.addHandler(inference_handler)
     inference_logger.propagate = False # Prevent logs from propagating to the root logger
 
-    # Set up a separate logger for vLLM metrics
-    metrics_logger = logging.getLogger(metrics_log_name)
-    metrics_logger.setLevel(logging.INFO)
-    metrics_handler = CloudLoggingHandler(gcp_logging_client, name=metrics_log_name)
-    metrics_handler.setFormatter(JsonFormatter())
-    metrics_logger.addHandler(metrics_handler)
-    metrics_logger.propagate = False # Prevent logs from propagating to the root logger
-
     # Configure the root logger to output to console for local debugging.
     # This will only catch logs not handled by inference_logger or metrics_logger.
     root_logger = logging.getLogger()
@@ -64,7 +56,7 @@ def setup_cloud_logging(gcp_project_id: str, inference_log_name: str, metrics_lo
     root_logger.addHandler(logging.StreamHandler()) # Add console output
     root_logger.setLevel(logging.INFO) # Set a default level for console output
 
-    return inference_logger, metrics_logger
+    return inference_logger
 
 def flush_cloud_loggers(loggers: list[logging.Logger]):
     """
