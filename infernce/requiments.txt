@@ -11,4 +11,3 @@ datasets
 python-dotenv
 google-cloud-logging
 google-cloud-storage
-openai
