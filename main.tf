@@ -96,21 +96,4 @@ resource "google_project_service" "logging_api" {
 }
 
 
-# 2. Create a BigQuery Dataset for analytical logs (for batch processing)
-resource "google_bigquery_dataset" "llm_logs_dataset" {
-  dataset_id = "llm_detox_logs_dataset"
-  project    = var.project_id
-  location   = var.region # Or choose a multi-region like "US" or "EU"
-  description = "Dataset for LLM detoxification inference and vLLM metrics logs."
-  depends_on = [google_project_service.logging_api]
-}
 
-# 3. Create a Cloud Storage bucket for long-term log archival
-resource "google_storage_bucket" "llm_logs_archive_bucket" {
-  name          = "${var.project_id}-llm-detox-logs-archive" # Bucket names must be globally unique
-  project       = var.project_id
-  location      = var.region
-  storage_class = "ARCHIVE" # Cheaper for long-term storage
-  force_destroy = false # Set to true to allow deletion of non-empty buckets on `terraform destroy`
-  depends_on    = [google_project_service.logging_api]
-}
