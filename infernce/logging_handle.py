@@ -26,14 +26,13 @@ class JsonFormatter(logging.Formatter):
             log_entry.update(record.json_payload)
         return json.dumps(log_entry)
 
-def setup_cloud_logging(gcp_project_id: str, inference_log_name: str, metrics_log_name: str):
+def setup_cloud_logging(gcp_project_id: str, inference_log_name: str):
     """
     Sets up Google Cloud Logging for the FastAPI application.
 
     Args:
         gcp_project_id (str): Your Google Cloud Project ID.
         inference_log_name (str): The name for inference-related logs.
-        metrics_log_name (str): The name for vLLM metrics-related logs.
 
     Returns:
         tuple: A tuple containing (inference_logger, metrics_logger).

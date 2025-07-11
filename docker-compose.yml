@@ -26,12 +26,12 @@ services:
       - NVIDIA_DRIVER_CAPABILITIES=compute,utility
     networks:
       - llm-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 20
-      start_period: 60s
+    # healthcheck:
+    #   test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+    #   interval: 30s
+    #   timeout: 10s
+    #   retries: 20
+    #   start_period: 60s
 
   fastapi-service:
     build:
@@ -43,9 +43,9 @@ services:
     environment:
       - vLLM_API=localhost
       - GCP_PROJECT_ID=meta-triode-457409-a9
-    depends_on:
-      vllm:
-        condition: service_healthy
+    # depends_on:
+    #   vllm:
+    #     condition: service_healthy
     networks:
       - llm-network
     volumes:

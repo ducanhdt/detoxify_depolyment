@@ -82,46 +82,49 @@ nvidia-smi || echo "NVIDIA driver not yet available, might need reboot"
 #     --model  unsloth/gemma-3-12b-it-bnb-4bit \
 #     --lora-modules seen-language=anhdtd/gemma-3-12b-textDetox-2025-seen-language \
 #                    unseen-language=anhdtd/gemma-3-12b-textDetox-2025-unseen-language
-    
-# Start services
-# echo "🔧 Building and starting services..."
-# docker compose up -d --build
 
-# # Wait for services to be ready
-# echo "⏳ Waiting for services to be ready..."
-# sleep 300
+git clone -b add_docker https://github.com/ducanhdt/detoxify_depolyment.git
+cd detoxify_depolyment
 
-# # Check service health
-# echo "🔍 Checking service health..."
+Start services
+echo "🔧 Building and starting services..."
+docker compose up -d --build
 
-# # Check vLLM
-# if curl -f http://localhost:8000/health > /dev/null 2>&1; then
-#     echo "✅ vLLM service is healthy"
-# else
-#     echo "❌ vLLM service is not responding"
-# fi
+# Wait for services to be ready
+echo "⏳ Waiting for services to be ready..."
+sleep 300
 
-# # Check FastAPI
-# if curl -f http://localhost:8080/health > /dev/null 2>&1; then
-#     echo "✅ FastAPI service is healthy"
-# else
-#     echo "❌ FastAPI service is not responding"
-# fi
+# Check service health
+echo "🔍 Checking service health..."
 
-# echo ""
-# echo "🎉 Services are starting up!"
-# echo ""
-# echo "📊 Service URLs:"
-# echo "   vLLM Server:    http://localhost:8000"
-# echo "   FastAPI Service: http://localhost:8080"
-# echo ""
-# echo "📝 View logs:"
-# echo "   docker compose logs -f"
-# echo ""
-# echo "🛑 Stop services:"
-# echo "   docker compose down"
-# echo ""
-# echo "💡 Test the detoxification service:"
-# echo "   curl -X POST http://localhost:8080/detoxify \\"
-# echo "     -H 'Content-Type: application/json' \\"
-# echo "     -d '{\"text\": \"Hello world\", \"language_id\": \"en\"}'"
+# Check vLLM
+if curl -f http://localhost:8000/health > /dev/null 2>&1; then
+    echo "✅ vLLM service is healthy"
+else
+    echo "❌ vLLM service is not responding"
+fi
+
+# Check FastAPI
+if curl -f http://localhost:8080/health > /dev/null 2>&1; then
+    echo "✅ FastAPI service is healthy"
+else
+    echo "❌ FastAPI service is not responding"
+fi
+
+echo ""
+echo "🎉 Services are starting up!"
+echo ""
+echo "📊 Service URLs:"
+echo "   vLLM Server:    http://localhost:8000"
+echo "   FastAPI Service: http://localhost:8080"
+echo ""
+echo "📝 View logs:"
+echo "   docker compose logs -f"
+echo ""
+echo "🛑 Stop services:"
+echo "   docker compose down"
+echo ""
+echo "💡 Test the detoxification service:"
+echo "   curl -X POST http://localhost:8080/detoxify \\"
+echo "     -H 'Content-Type: application/json' \\"
+echo "     -d '{\"text\": \"Hello world\", \"language_id\": \"en\"}'"

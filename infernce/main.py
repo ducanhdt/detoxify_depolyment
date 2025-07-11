@@ -23,22 +23,20 @@ from utils import get_messages, parse_detoxified_output
 load_dotenv()
 
 # --- Configuration ---
-VLLM_API_BASE_URL = os.getenv("vLLM_API", "localhost")
+VLLM_API_BASE_URL = os.getenv("vLLM_API", "localhost") 
 VLLM_OPENAI_COMPLETIONS_URL = f"http://{VLLM_API_BASE_URL}:8000/v1/chat/completions"
 VLLM_METRICS_URL = f"http://{VLLM_API_BASE_URL}:8000/metrics"
-
+print("VLLM_OPENAI_COMPLETIONS_URL:", VLLM_OPENAI_COMPLETIONS_URL)
 GCP_PROJECT_ID = os.getenv("GCP_PROJECT_ID", "your-gcp-project-id")
 
 # Log names for Google Cloud Logging
 INFERENCE_LOG_NAME = "llm-detox-inference-logs"
-VLLM_METRICS_LOG_NAME = "vllm-metrics-snapshot-logs"
 
 # --- Setup Cloud Logging ---
 # Call the setup function from logging_config.py
 inference_logger = setup_cloud_logging(
     gcp_project_id=GCP_PROJECT_ID,
     inference_log_name=INFERENCE_LOG_NAME,
-    metrics_log_name=VLLM_METRICS_LOG_NAME
 )
 
 
@@ -216,6 +214,7 @@ async def detoxify(request: DetoxificationRequest):
                 }
             }
         )
+        logging.error(f"Detoxification error for request_id {request_id}: {e}")
         raise HTTPException(status_code=503, detail="Service is not available now. Please try again later.")
 
 if __name__ == "__main__":
