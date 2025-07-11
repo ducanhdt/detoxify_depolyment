@@ -13,7 +13,6 @@ services:
       --model unsloth/gemma-3-12b-it-bnb-4bit
       --lora-modules seen-language=anhdtd/gemma-3-12b-textDetox-2025-seen-language
                      unseen-language=anhdtd/gemma-3-12b-textDetox-2025-unseen-language
-      --enable-metrics
     shm_size: '8gb'
     deploy:
       resources:
