@@ -13,6 +13,7 @@ services:
       --model unsloth/gemma-3-12b-it-bnb-4bit
       --lora-modules seen-language=anhdtd/gemma-3-12b-textDetox-2025-seen-language
                      unseen-language=anhdtd/gemma-3-12b-textDetox-2025-unseen-language
+      --enable-metrics
     shm_size: '8gb'
     deploy:
       resources:
@@ -26,12 +27,12 @@ services:
       - NVIDIA_DRIVER_CAPABILITIES=compute,utility
     networks:
       - llm-network
-    # healthcheck:
-    #   test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-    #   interval: 30s
-    #   timeout: 10s
-    #   retries: 20
-    #   start_period: 60s
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 20
+      start_period: 60s
 
   fastapi-service:
     build:
@@ -41,11 +42,11 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - vLLM_API=localhost
+      - vLLM_API=vllm
       - GCP_PROJECT_ID=meta-triode-457409-a9
-    # depends_on:
-    #   vllm:
-    #     condition: service_healthy
+    depends_on:
+      vllm:
+        condition: service_healthy
     networks:
       - llm-network
     volumes:
@@ -53,6 +54,27 @@ services:
       - ./credentials.json:/app/credentials.json:ro
     restart: unless-stopped
 
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana-service
+    ports:
+      - "5000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SECURITY_ADMIN_USER=admin
+    networks:
+      - llm-network
+    volumes:
+      - grafana-storage:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    depends_on:
+      - vllm
+    restart: unless-stopped
+
 networks:
   llm-network:
     driver: bridge
+
+volumes:
+  grafana-storage:
+    driver: local

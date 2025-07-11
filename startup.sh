@@ -86,7 +86,7 @@ nvidia-smi || echo "NVIDIA driver not yet available, might need reboot"
 git clone -b add_docker https://github.com/ducanhdt/detoxify_depolyment.git
 cd detoxify_depolyment
 
-Start services
+# Start services
 echo "🔧 Building and starting services..."
 docker compose up -d --build
 
