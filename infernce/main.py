@@ -23,59 +23,74 @@ from utils import get_messages, parse_detoxified_output
 load_dotenv()
 
 # --- Configuration ---
-VLLM_API_BASE_URL = os.getenv("vLLM_API", "localhost") 
+VLLM_API_BASE_URL = os.getenv("vLLM_API", "localhost")
 VLLM_OPENAI_COMPLETIONS_URL = f"http://{VLLM_API_BASE_URL}:8000/v1/chat/completions"
 VLLM_METRICS_URL = f"http://{VLLM_API_BASE_URL}:8000/metrics"
-print("VLLM_OPENAI_COMPLETIONS_URL:", VLLM_OPENAI_COMPLETIONS_URL)
+
 GCP_PROJECT_ID = os.getenv("GCP_PROJECT_ID", "your-gcp-project-id")
 
 # Log names for Google Cloud Logging
 INFERENCE_LOG_NAME = "llm-detox-inference-logs"
+VLLM_METRICS_LOG_NAME = "vllm-metrics-snapshot-logs"
 
 # --- Setup Cloud Logging ---
 # Call the setup function from logging_config.py
-inference_logger = setup_cloud_logging(
+inference_logger, metrics_logger = setup_cloud_logging(
     gcp_project_id=GCP_PROJECT_ID,
     inference_log_name=INFERENCE_LOG_NAME,
+    metrics_log_name=VLLM_METRICS_LOG_NAME
 )
 
+# --- Helper to fetch vLLM metrics ---
+async def fetch_vllm_metrics():
+    """Fetches Prometheus metrics from the vLLM server."""
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(VLLM_METRICS_URL, timeout=5)
+            response.raise_for_status()
+            metrics_raw = response.text
+            parsed_metrics = {}
+            for line in metrics_raw.split('\n'):
+                if line.startswith('#') or not line.strip():
+                    continue
+                parts = line.split(' ')
+                if len(parts) >= 2:
+                    metric_name = parts[0]
+                    metric_value = parts[1]
+                    try:
+                        parsed_metrics[metric_name] = float(metric_value)
+                    except ValueError:
+                        parsed_metrics[metric_name] = metric_value
+            return parsed_metrics
+    except httpx.RequestError as e:
+        metrics_logger.error(f"Failed to fetch vLLM metrics: {e}",
+                             extra={"json_payload": {"error": str(e), "url": VLLM_METRICS_URL}})
+        return {}
 
+# --- Background task for periodic vLLM metric logging ---
+async def log_vllm_metrics_periodically():
+    """Logs vLLM metrics every 60 seconds."""
+    while True:
+        metrics = await fetch_vllm_metrics()
+        if metrics:
+            metrics_logger.info("vLLM Metrics Snapshot", extra={"json_payload": metrics})
+        await asyncio.sleep(60)
 
+# --- Middleware to add a unique request ID ---
+class RequestIdMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        request.state.request_id = os.urandom(8).hex()
+        response = await call_next(request)
+        return response
 
+# Middleware to sanitize text queries
 class TextSanitizationMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         if request.method == "POST" and request.url.path == "/detoxify":
             try:
                 body = await request.json()
             except json.JSONDecodeError:
-                return JSONResponse(
-                    status_code=400,
-                    content={"detail": "Invalid JSON format in request body."}
-                )
-
-            if not isinstance(body.get("text"), str) or not isinstance(body.get("language_id"), str):
-                # Debug logging to understand what we're receiving
-                text_value = body.get("text")
-                language_id_value = body.get("language_id")
-                
-                inference_logger.warning(
-                    "Invalid request format",
-                    extra={"json_payload": {
-                        "request_id": getattr(request.state, 'request_id', 'unknown'), 
-                        "received_body": body,
-                        "text_type": type(text_value).__name__,
-                        "text_value": text_value,
-                        "language_id_type": type(language_id_value).__name__,
-                        "language_id_value": language_id_value
-                    }}
-                )
-                return JSONResponse(
-                    status_code=400,
-                    content={
-                        "detail": "Invalid request format.", 
-                        "error": f"text must be string (got {type(text_value).__name__}), language_id must be string (got {type(language_id_value).__name__})"
-                    }
-                )
+                raise HTTPException(status_code=400, detail="Invalid JSON format in request body.")
 
             forbidden_keywords = ["prompt", "secret", "token", "password"]
             if any(keyword in body.get("text", "").lower() for keyword in forbidden_keywords):
@@ -83,20 +98,21 @@ class TextSanitizationMiddleware(BaseHTTPMiddleware):
                     "Forbidden keyword detected in request",
                     extra={"json_payload": {"request_id": getattr(request.state, 'request_id', 'unknown'), "text_preview": body.get("text", "")[:100]}}
                 )
-                return JSONResponse(
-                    status_code=400,
-                    content={"detail": "Query contains forbidden content."}
-                )
+                raise HTTPException(status_code=400, detail="Query contains forbidden content.")
 
             if len(body.get("text", "")) > 500:
                 inference_logger.warning(
                     "Query too long",
                     extra={"json_payload": {"request_id": getattr(request.state, 'request_id', 'unknown'), "text_length": len(body.get("text", ""))}}
                 )
-                return JSONResponse(
-                    status_code=400,
-                    content={"detail": "Query is too long."}
+                raise HTTPException(status_code=400, detail="Query is too long.")
+
+            if not isinstance(body.get("text"), str) or not isinstance(body.get("language_id"), str):
+                inference_logger.warning(
+                    "Invalid request format",
+                    extra={"json_payload": {"request_id": getattr(request.state, 'request_id', 'unknown'), "received_body": body}}
                 )
+                raise HTTPException(status_code=400, detail="Invalid request format.")
 
         response = await call_next(request)
         return response
@@ -117,14 +133,18 @@ async def lifespan(app: FastAPI):
         base_url=f"http://{VLLM_API_BASE_URL}:8000/v1",
     )
 
+    asyncio.create_task(log_vllm_metrics_periodically())
+    logging.info("FastAPI application started. Background metric logging initiated.")
+
     yield
 
     logging.info("FastAPI application shutting down. Flushing logs...")
-    flush_cloud_loggers([inference_logger]) # Use the new flush function
+    flush_cloud_loggers([inference_logger, metrics_logger]) # Use the new flush function
     logging.info("Logs flushed. FastAPI application shut down.")
 
 # Define the app with the lifespan handler and middlewares
 app = FastAPI(lifespan=lifespan)
+app.add_middleware(RequestIdMiddleware)
 app.add_middleware(TextSanitizationMiddleware)
 
 # Schema for detoxification request
@@ -132,18 +152,14 @@ class DetoxificationRequest(BaseModel):
     text: str
     language_id: str
 
-# Health check endpoint
-@app.get("/health")
-async def health_check():
-    return {"status": "healthy", "timestamp": time.time()}
-
 # Detoxification endpoint
 @app.post("/detoxify")
-async def detoxify(request: DetoxificationRequest):
+async def detoxify(request: DetoxificationRequest, http_request: Request):
     start_time = time.perf_counter()
     input_text = request.text.strip()
     language_id = request.language_id.lower()
-    request_id = os.urandom(8).hex()
+    request_id = http_request.state.request_id
+
     try:
         messages = get_messages(input_text, language_id)
         
@@ -170,7 +186,12 @@ async def detoxify(request: DetoxificationRequest):
         end_time = time.perf_counter()
         latency_ms = (end_time - start_time) * 1000
 
-        result_dict = {"input_text": input_text,
+        inference_logger.info(
+            "Detoxification Inference Completed",
+            extra={
+                "json_payload": {
+                    "request_id": request_id,
+                    "input_text": input_text,
                     "language_id": language_id,
                     "model_used": model_name,
                     "actual_model_id": model_id_from_response,
@@ -181,21 +202,24 @@ async def detoxify(request: DetoxificationRequest):
                     "completion_tokens": completion_tokens,
                     "total_tokens": total_tokens,
                 }
-
-        inference_logger.info(
-            "Detoxification Inference Completed",
-            extra={
-                "json_payload": {
-                    "request_id": request_id,
-                    **result_dict,
-                }
             }
         )
 
         return JSONResponse(
             content={
                 "status": "success",
-                "data": result_dict
+                "data": {
+                    "text": input_text,
+                    "language_id": language_id,
+                    "detoxified_text": parsed_output['neutral_text'],
+                    "toxicity_terms": parsed_output['toxic_words'],
+                    "latency_ms": latency_ms,
+                    "prompt_tokens": prompt_tokens,
+                    "completion_tokens": completion_tokens,
+                    "total_tokens": total_tokens,
+                    "model_used": model_name,
+                    "actual_model_id": model_id_from_response,
+                }
             },
             status_code=200
         )
@@ -214,7 +238,6 @@ async def detoxify(request: DetoxificationRequest):
                 }
             }
         )
-        logging.error(f"Detoxification error for request_id {request_id}: {e}")
         raise HTTPException(status_code=503, detail="Service is not available now. Please try again later.")
 
 if __name__ == "__main__":
