@@ -16,6 +16,7 @@ from .log_processor import LogProcessor
 from .shift_detector import ShiftDetector
 from .grafana_pusher import GrafanaPusher
 from .alert_manager import AlertManager
+from .metrics_exporter import MetricsExporter
 
 class DataShiftService:
     """Main service class for data shift detection"""
@@ -30,6 +31,7 @@ class DataShiftService:
         self.shift_detector = ShiftDetector(self.log_processor)
         self.grafana_pusher = GrafanaPusher()
         self.alert_manager = AlertManager()
+        self.metrics_exporter = MetricsExporter()
         
         # Setup signal handlers
         signal.signal(signal.SIGINT, self._signal_handler)
@@ -53,6 +55,9 @@ class DataShiftService:
             return False
         
         Config.print_config()
+        
+        # Start metrics server
+        self.metrics_exporter.run_server(host='0.0.0.0', port=8080)
         
         # Perform health checks
         if not await self._health_check():
@@ -144,6 +149,8 @@ class DataShiftService:
         """Run the hourly language distribution analysis"""
         self.logger.info("Starting hourly analysis")
         
+        analysis_start_time = datetime.now()
+        
         try:
             # Analyze the previous hour (current hour - 1)
             current_time = datetime.now()
@@ -156,26 +163,44 @@ class DataShiftService:
             
             if not distributions:
                 self.logger.warning(f"No data available for hour {analysis_hour}")
+                self.metrics_exporter.record_error('no_data_available')
                 return
+            
+            # Update metrics with distribution data
+            self.metrics_exporter.update_language_distribution(distributions)
             
             # Detect shifts
             alerts = self.shift_detector.detect_shifts(analysis_hour)
+            
+            # Update metrics with alert data
+            self.metrics_exporter.update_shift_alerts(alerts)
             
             # Push to Grafana
             grafana_success = self.grafana_pusher.push_language_distribution(distributions)
             if not grafana_success:
                 self.logger.warning("Failed to push distribution data to Grafana")
+                self.metrics_exporter.record_error('grafana_push_failed')
             
             # Push alerts to Grafana
             if alerts:
                 alert_success = self.grafana_pusher.push_shift_alerts(alerts)
                 if not alert_success:
                     self.logger.warning("Failed to push alerts to Grafana")
+                    self.metrics_exporter.record_error('grafana_alert_push_failed')
             
             # Send notifications for significant alerts
             notification_success = self.alert_manager.send_alerts(alerts)
             if not notification_success:
                 self.logger.warning("Failed to send alert notifications")
+                self.metrics_exporter.record_error('notification_failed')
+            
+            # Update service health and timestamp
+            self.metrics_exporter.update_service_health(True)
+            self.metrics_exporter.update_last_analysis_timestamp(analysis_hour)
+            
+            # Record analysis duration
+            duration = (datetime.now() - analysis_start_time).total_seconds()
+            self.metrics_exporter.record_analysis_duration('hourly_analysis', duration)
             
             # Log summary
             self.logger.info(f"Analysis complete: {len(distributions)} languages, {len(alerts)} alerts")
@@ -191,6 +216,10 @@ class DataShiftService:
             
         except Exception as e:
             self.logger.error(f"Error in hourly analysis: {e}")
+            
+            # Record error in metrics
+            self.metrics_exporter.record_error('hourly_analysis_failed')
+            self.metrics_exporter.update_service_health(False)
             
             # Send error alert
             self.alert_manager.send_health_alert(
