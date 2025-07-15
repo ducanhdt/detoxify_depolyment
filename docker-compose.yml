@@ -91,6 +91,41 @@ services:
       - prometheus
     restart: unless-stopped
 
+  data-shift-service:
+    build:
+      context: ./data_shift_service
+      dockerfile: Dockerfile
+    container_name: data-shift-service
+    environment:
+      - GCP_PROJECT_ID=meta-triode-457409-a9
+      - CREDENTIALS_PATH=/app/credentials.json
+      - GRAFANA_URL=http://grafana:3000
+      - GRAFANA_USERNAME=admin
+      - GRAFANA_PASSWORD=admin
+      - LOG_RETENTION_HOURS=48
+      - DETECTION_THRESHOLD_MEDIUM=20.0
+      - DETECTION_THRESHOLD_HIGH=50.0
+      - BASELINE_HOURS=24
+      - SCHEDULE_MINUTE=5
+      - USE_BIGQUERY_STORAGE=false
+      - ENABLE_EMAIL_ALERTS=false
+      - ENABLE_SLACK_ALERTS=false
+    depends_on:
+      - grafana
+      - fastapi-service
+    networks:
+      - llm-network
+    volumes:
+      - ./data_shift_service:/app
+      - ./credentials.json:/app/credentials.json:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "print('Health check')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
 networks:
   llm-network:
     driver: bridge
