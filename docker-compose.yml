@@ -116,7 +116,7 @@ services:
     networks:
       - llm-network
     volumes:
-      - ./data_shift_service:/app
+      - ./data_shift_service:/app/data_shift_service
       - ./credentials.json:/app/credentials.json:ro
     restart: unless-stopped
     healthcheck:
