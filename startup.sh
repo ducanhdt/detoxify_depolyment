@@ -83,7 +83,7 @@ nvidia-smi || echo "NVIDIA driver not yet available, might need reboot"
 #     --lora-modules seen-language=anhdtd/gemma-3-12b-textDetox-2025-seen-language \
 #                    unseen-language=anhdtd/gemma-3-12b-textDetox-2025-unseen-language
 
-git clone -b add_docker https://github.com/ducanhdt/detoxify_depolyment.git
+git clone https://github.com/ducanhdt/detoxify_depolyment.git
 cd detoxify_depolyment
 
 # Start services
