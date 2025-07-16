@@ -1,0 +1,11 @@
+{
+  "avg_text_length": 120.0,
+  "text_length_std": 60.0,
+  "language_distribution": {
+    "en": 75.0,
+    "es": 15.0,
+    "fr": 10.0
+  },
+  "avg_request_volume": 15.0,
+  "updated_at": "2025-07-16T12:33:01.154102"
+}

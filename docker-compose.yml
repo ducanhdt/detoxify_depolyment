@@ -70,8 +70,8 @@ services:
       - '--web.enable-lifecycle'
     networks:
       - llm-network
-    depends_on:
-      - vllm
+    # depends_on:
+    #   - vllm
     restart: unless-stopped
 
   grafana:
@@ -87,6 +87,24 @@ services:
     volumes:
       - grafana-storage:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+  data-shift-monitor:
+    build:
+      context: ./data-shift-monitor
+      dockerfile: Dockerfile
+    container_name: data-shift-monitor-service
+    ports:
+      - "8081:8081"
+    environment:
+      - GCP_PROJECT_ID=meta-triode-457409-a9
+    networks:
+      - llm-network
+    volumes:
+      - ./data-shift-monitor:/app
+      - ./credentials.json:/app/credentials.json:ro
     depends_on:
       - prometheus
     restart: unless-stopped

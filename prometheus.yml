@@ -13,3 +13,10 @@ scrape_configs:
     metrics_path: '/metrics'
     scrape_interval: 30s
     scrape_timeout: 10s
+
+  - job_name: 'data-shift-monitor'
+    static_configs:
+      - targets: ['data-shift-monitor:8081']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+    scrape_timeout: 10s

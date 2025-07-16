@@ -1,8 +1,10 @@
 import logging
 import json
+import os
 import time
 from google.cloud import logging as gcp_logging
 from google.cloud.logging.handlers import CloudLoggingHandler
+from google.oauth2 import service_account
 
 class JsonFormatter(logging.Formatter):
     """
@@ -38,8 +40,15 @@ def setup_cloud_logging(gcp_project_id: str, inference_log_name: str):
         tuple: A tuple containing (inference_logger, metrics_logger).
     """
     # Initialize GCP Logging client
-    gcp_logging_client = gcp_logging.Client(project=gcp_project_id)
-
+    credentials_path = "/app/credentials.json"
+    if os.path.exists(credentials_path):
+        credentials = service_account.Credentials.from_service_account_file(
+            credentials_path,
+        )
+        gcp_logging_client = gcp_logging.Client(project=gcp_project_id, credentials=credentials)
+    else:
+        gcp_logging_client = gcp_logging.Client(project=gcp_project_id)
+    print("GCP Logging client initialized.", "Project ID:", gcp_logging_client)
     # Set up the main logger for inference requests (model input/output)
     inference_logger = logging.getLogger(inference_log_name)
     inference_logger.setLevel(logging.INFO)
