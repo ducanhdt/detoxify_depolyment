@@ -55,9 +55,6 @@ class GCPLogClient:
         Returns:
             List of log entries with extracted data
         """
-        # if self.client is None:
-        #     logger.warning("GCP client not available, returning mock data")
-        #     return self._generate_mock_data()
         
         try:
             # Format timestamps for GCP logging query
@@ -102,36 +99,6 @@ class GCPLogClient:
         except Exception as e:
             logger.error(f"Error querying logs: {e}")
             raise
-    
-    def _generate_mock_data(self) -> List[Dict[str, Any]]:
-        """
-        Generate mock data for testing when GCP client is not available
-        
-        Returns:
-            List of mock log entries
-        """
-        import random
-        from datetime import datetime, timedelta
-        
-        mock_data = []
-        languages = ['en', 'es', 'fr', 'de', 'it']
-        
-        # Generate 5-10 mock entries
-        for i in range(random.randint(5, 10)):
-            text_length = random.randint(50, 200)
-            mock_text = "Mock text " * (text_length // 10)
-            
-            mock_data.append({
-                'timestamp': datetime.utcnow() - timedelta(minutes=random.randint(1, 60)),
-                'text': mock_text[:text_length],
-                'language_id': random.choice(languages),
-                'text_length': text_length,
-                'request_id': f"mock-{i}",
-                'model_used': 'seen-language' if random.random() > 0.5 else 'unseen-language'
-            })
-        
-        logger.info(f"Generated {len(mock_data)} mock log entries")
-        return mock_data
     
     def get_recent_logs(self, minutes: int = 60) -> List[Dict[str, Any]]:
         """
