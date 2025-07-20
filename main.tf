@@ -5,7 +5,6 @@ provider "google" {
   zone    = var.zone
 }
 
-
 # Create a dedicated service account for your VM
 resource "google_service_account" "gemma_vm_service_account" {
   account_id   = "gemma-vm-service-account"
@@ -64,12 +63,9 @@ resource "google_compute_instance" "gemma_l4_vm" {
     provisioning_model  = "STANDARD"
   }
   service_account {
-  email  = google_service_account.gemma_vm_service_account.email
+    email  = google_service_account.gemma_vm_service_account.email
     scopes = ["https://www.googleapis.com/auth/cloud-platform", "https://www.googleapis.com/auth/logging.write"] # Add specific logging scope
   }
-  #service_account {
-  #  scopes = ["https://www.googleapis.com/auth/cloud-platform"]
-  #}
 }
 
 resource "google_compute_firewall" "allow-ssh-http" {
@@ -85,7 +81,6 @@ resource "google_compute_firewall" "allow-ssh-http" {
   target_tags   = ["gemma-server"]
 }
 
-
 # --- Google Cloud Logging Setup ---
 
 # 1. Enable the Cloud Logging API
@@ -95,5 +90,15 @@ resource "google_project_service" "logging_api" {
   disable_on_destroy = false # Set to true if you want to disable the API on `terraform destroy`
 }
 
+# Grant the VM service account BigQuery permissions for monitoring
+resource "google_project_iam_member" "gemma_vm_bigquery_user" {
+  project = var.project_id
+  role    = "roles/bigquery.user"
+  member  = "serviceAccount:${google_service_account.gemma_vm_service_account.email}"
+}
 
-
+resource "google_project_iam_member" "gemma_vm_bigquery_job_user" {
+  project = var.project_id
+  role    = "roles/bigquery.jobUser"
+  member  = "serviceAccount:${google_service_account.gemma_vm_service_account.email}"
+}
