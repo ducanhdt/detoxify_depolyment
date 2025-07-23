@@ -2,7 +2,7 @@ import logging
 import statistics
 from typing import List, Dict, Any
 from collections import Counter
-
+from evaluation.evaluate import eval
 logger = logging.getLogger(__name__)
 
 class MetricsCalculator:
@@ -181,6 +181,39 @@ class MetricsCalculator:
         # Return average absolute difference
         return total_diff / len(all_languages)
     
+    def calculate_model_performance(self, log_data: List[Dict[str, Any]]) -> Dict[str, float]:
+        """
+        Calculate model performance metrics from log data
+        
+        Args:
+            log_data: List of log entries with model performance fields
+            
+        Returns:
+            Dictionary with model performance metrics
+        """
+        logger.info(f"{log_data[0]}")
+        logger.info(f"Calculating model performance from {len(log_data)} log entries")
+        input_texts = [entry['input_text'] for entry in log_data if 'input_text' in entry]
+        output_texts = [entry['detoxified_text'] for entry in log_data if 'detoxified_text' in entry]
+        language_ids = [entry['language_id'] for entry in log_data if 'language_id' in entry]
+        # logger.info(f"Input texts: {input_texts}")
+        # logger.info(f"Output texts: {output_texts}")
+        results = eval(input_texts, output_texts, reference_texts=None)
+        logger.info(f"Model performance calculated: {results}")
+        # group results by language
+        import pandas as pd
+        results_df = pd.DataFrame({
+            # 'J Score': results['J'],
+            'Toxicity': results['STA'],
+            'Similarity': results['SIM'],
+            # 'Fluency': results['XCOMET']
+        })
+        results_df['language_id'] = language_ids
+        results_df = results_df.groupby('language_id').agg(['mean', 'std']).reset_index()
+        results_df.fillna(0, inplace=True)
+        results_dict = results_df.set_index('language_id').T.to_dict()
+        return results_dict
+
     def process_log_data(self, log_data: List[Dict[str, Any]]) -> Dict[str, Any]:
         """
         Process log data and calculate all metrics
@@ -197,8 +230,39 @@ class MetricsCalculator:
             'text_length': self.calculate_text_length_metrics(log_data),
             'language_distribution': self.calculate_language_distribution(log_data),
             'request_volume': self.calculate_request_volume(log_data),
+            'model_performance': self.calculate_model_performance(log_data),
             'total_requests': len(log_data)
         }
         
         logger.info(f"Calculated metrics: {metrics}")
         return metrics
+if __name__ == "__main__":
+    # Example usage
+    calculator = MetricsCalculator()
+    example_log_data = [
+        {
+            'timestamp': '2023-10-01T12:00:00Z',
+            'input_text': 'Hello world',
+            'language_id': 'en',
+            'text_length': 11,
+            'output_text': 'Hello world',
+            'request_id': '12345',
+            'model_used': 'model_v1'
+        },
+        {
+            'timestamp': '2023-10-01T12:01:00Z',
+            'input_text': 'Bonjour le monde',
+            'language_id': 'fr',
+            'text_length': 17,
+            'output_text': 'Bonjour le monde',
+            'request_id': '12346',
+            'model_used': 'model_v1'
+        }
+    ]
+    
+    metrics = calculator.process_log_data(example_log_data)
+    print(metrics['model_performance'])
+    model_performance = metrics['model_performance']
+    for language in model_performance:
+        for (metric, type), value in model_performance[language].items():
+            print(f"Language: {language}, Metric: {type}, Value: {value}")

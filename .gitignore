@@ -3,3 +3,4 @@ credentials.json
 .terraform*
 .env
 *__pycache__*
+*cache*

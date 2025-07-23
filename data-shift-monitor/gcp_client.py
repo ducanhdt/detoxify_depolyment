@@ -85,12 +85,13 @@ class GCPLogClient:
 
                     if text and language_id:
                         log_data.append({
-                            'timestamp': entry.timestamp,
-                            'text': text,
-                            'language_id': language_id,
+                            **payload,
                             'text_length': len(text),
-                            'request_id': payload.get('request_id', ''),
-                            'model_used': payload.get('model_used', '')
+                            'timestamp': entry.timestamp,
+                            # 'text': text,
+                            # 'language_id': language_id,
+                            # 'request_id': payload.get('request_id', ''),
+                            # 'model_used': payload.get('model_used', '')
                         })
             
             logger.info(f"Retrieved {len(log_data)} log entries")

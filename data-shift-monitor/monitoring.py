@@ -113,7 +113,8 @@ class DataShiftMonitor:
             
             # Calculate current metrics
             current_metrics = self.metrics_calculator.process_log_data(recent_logs)
-            
+            logger.info(f"Current metrics calculated: {current_metrics}")
+            logger.info("Calculating data shift metrics")
             # Calculate data shift
             shift_metrics = self.metrics_calculator.calculate_data_shift(
                 current_metrics, self.baseline_data
@@ -138,6 +139,9 @@ class DataShiftMonitor:
             
         except Exception as e:
             logger.error(f"Error in data shift check: {e}")
+            # log traceback for debugging
+            import traceback
+            logger.error(traceback.format_exc())
             return {
                 "status": "error",
                 "message": str(e),

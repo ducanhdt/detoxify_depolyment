@@ -25,210 +25,326 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 2,
+  "id": 1,
   "links": [],
   "panels": [
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "PBFA97CFB590B2093"
       },
-      "description": "Percentage change in average text length compared to baseline",
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "% Change",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "barWidthFactor": 0.6,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 2,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "line"
-            }
+            "mode": "thresholds"
           },
           "mappings": [],
+          "min": 0.7,
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 20
+                "color": "green"
               },
               {
                 "color": "red",
-                "value": 50
+                "value": 80
               }
             ]
           },
-          "unit": "percent"
+          "unit": "percentunit"
         },
         "overrides": []
       },
       "gridPos": {
         "h": 8,
-        "w": 12,
+        "w": 13,
         "x": 0,
         "y": 0
       },
-      "id": 1,
+      "id": 6,
       "options": {
+        "displayMode": "gradient",
         "legend": {
           "calcs": [],
           "displayMode": "list",
           "placement": "bottom",
-          "showLegend": true
+          "showLegend": false
         },
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
+        "maxVizHeight": 300,
+        "minVizHeight": 16,
+        "minVizWidth": 8,
+        "namePlacement": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true,
+        "sizing": "auto",
+        "valueMode": "color"
       },
+      "pluginVersion": "12.0.2",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
+          "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "data_shift_text_length_mean_change",
-          "legendFormat": "Text Length Change",
+          "expr": "model_performance_mean{metric=\"Similarity\"}",
+          "fullMetaSearch": false,
+          "includeNullMetadata": true,
+          "legendFormat": "__auto",
           "range": true,
-          "refId": "A"
+          "refId": "A",
+          "useBackend": false
         }
       ],
-      "title": "Text Length Change",
-      "type": "timeseries"
+      "title": "Similarity",
+      "transformations": [
+        {
+          "id": "renameByRegex",
+          "options": {
+            "regex": ".*language=\\\"(.{2,4})\\\".*$",
+            "renamePattern": "$1"
+          }
+        }
+      ],
+      "type": "bargauge"
     },
     {
       "datasource": {
         "type": "prometheus",
         "uid": "${DS_PROMETHEUS}"
       },
-      "description": "Percentage change in language distribution compared to baseline",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "palette-classic"
           },
           "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "% Change",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "barWidthFactor": 0.6,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
             "hideFrom": {
               "legend": false,
               "tooltip": false,
               "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 2,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "line"
             }
           },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 15
-              },
-              {
-                "color": "red",
-                "value": 30
-              }
-            ]
-          },
-          "unit": "percent"
+          "mappings": []
         },
         "overrides": []
       },
       "gridPos": {
         "h": 8,
-        "w": 12,
-        "x": 12,
+        "w": 6,
+        "x": 13,
         "y": 0
       },
-      "id": 2,
+      "id": 5,
       "options": {
+        "displayLabels": [
+          "value"
+        ],
         "legend": {
-          "calcs": [],
           "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
+          "placement": "right",
+          "showLegend": false,
+          "values": []
+        },
+        "pieType": "pie",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
         },
         "tooltip": {
+          "hideZeros": false,
           "mode": "single",
           "sort": "none"
         }
       },
+      "pluginVersion": "12.0.2",
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
+          "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "data_shift_language_distribution_change",
-          "legendFormat": "Language Distribution Change",
+          "expr": "data_shift_language_distribution_percent",
+          "fullMetaSearch": false,
+          "includeNullMetadata": true,
+          "legendFormat": "__auto",
           "range": true,
-          "refId": "A"
+          "refId": "A",
+          "useBackend": false
         }
       ],
-      "title": "Language Distribution Change",
-      "type": "timeseries"
+      "title": "Language distribution",
+      "transformations": [
+        {
+          "id": "renameByRegex",
+          "options": {
+            "regex": ".*language=\\\"(.*)\\\".*$",
+            "renamePattern": "$1"
+          }
+        }
+      ],
+      "type": "piechart"
+    },
+    {
+      "datasource": {
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 5,
+        "x": 19,
+        "y": 0
+      },
+      "id": 8,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "12.0.2",
+      "targets": [
+        {
+          "disableTextWrap": false,
+          "editorMode": "builder",
+          "expr": "data_shift_current_request_volume",
+          "fullMetaSearch": false,
+          "includeNullMetadata": true,
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "A",
+          "useBackend": false
+        }
+      ],
+      "title": "Request volumn/ Minute",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "min": 0.7,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 13,
+        "x": 0,
+        "y": 8
+      },
+      "id": 7,
+      "options": {
+        "displayMode": "gradient",
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
+        },
+        "maxVizHeight": 300,
+        "minVizHeight": 16,
+        "minVizWidth": 8,
+        "namePlacement": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true,
+        "sizing": "auto",
+        "valueMode": "color"
+      },
+      "pluginVersion": "12.0.2",
+      "targets": [
+        {
+          "disableTextWrap": false,
+          "editorMode": "builder",
+          "expr": "model_performance_mean{metric=\"Toxicity\"}",
+          "fullMetaSearch": false,
+          "includeNullMetadata": true,
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "A",
+          "useBackend": false
+        }
+      ],
+      "title": "Toxicity",
+      "transformations": [
+        {
+          "id": "renameByRegex",
+          "options": {
+            "regex": ".*language=\\\"(.{2,4})\\\".*$",
+            "renamePattern": "$1"
+          }
+        }
+      ],
+      "type": "bargauge"
     },
     {
       "datasource": {
@@ -279,8 +395,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "yellow",
@@ -298,8 +413,8 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 12,
-        "x": 0,
+        "w": 6,
+        "x": 13,
         "y": 8
       },
       "id": 3,
@@ -311,10 +426,12 @@
           "showLegend": true
         },
         "tooltip": {
+          "hideZeros": false,
           "mode": "single",
           "sort": "none"
         }
       },
+      "pluginVersion": "12.0.2",
       "targets": [
         {
           "datasource": {
@@ -330,6 +447,215 @@
       ],
       "title": "Request Volume Change",
       "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 5,
+        "x": 19,
+        "y": 8
+      },
+      "id": 9,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "/^Time$/",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "12.0.2",
+      "targets": [
+        {
+          "disableTextWrap": false,
+          "editorMode": "builder",
+          "expr": "data_shift_last_check_timestamp",
+          "fullMetaSearch": false,
+          "includeNullMetadata": true,
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "A",
+          "useBackend": false
+        }
+      ],
+      "title": "Last check",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "description": "Percentage change in average text length compared to baseline",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "yellow",
+                "value": 20
+              },
+              {
+                "color": "red",
+                "value": 50
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 0,
+        "y": 16
+      },
+      "id": 1,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "12.0.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "builder",
+          "expr": "data_shift_text_length_mean_change",
+          "legendFormat": "Text Length Change",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Text Length Change",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "description": "Percentage change in language distribution compared to baseline",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "yellow",
+                "value": 15
+              },
+              {
+                "color": "red",
+                "value": 30
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 7,
+        "x": 6,
+        "y": 16
+      },
+      "id": 2,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "12.0.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "builder",
+          "expr": "data_shift_language_distribution_change",
+          "legendFormat": "Language Distribution Change",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Language Distribution Change",
+      "type": "stat"
     },
     {
       "datasource": {
@@ -380,8 +706,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           },
@@ -390,10 +715,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 8
+        "h": 6,
+        "w": 11,
+        "x": 13,
+        "y": 16
       },
       "id": 4,
       "options": {
@@ -404,10 +729,12 @@
           "showLegend": true
         },
         "tooltip": {
+          "hideZeros": false,
           "mode": "single",
           "sort": "none"
         }
       },
+      "pluginVersion": "12.0.2",
       "targets": [
         {
           "datasource": {
@@ -425,8 +752,9 @@
       "type": "timeseries"
     }
   ],
+  "preload": false,
   "refresh": "30s",
-  "schemaVersion": 39,
+  "schemaVersion": 41,
   "tags": [
     "data-shift",
     "monitoring"
@@ -435,8 +763,8 @@
     "list": [
       {
         "current": {
-          "text": "prometheus-1",
-          "value": "aerm4vyaavrpcd"
+          "text": "Prometheus",
+          "value": "PBFA97CFB590B2093"
         },
         "includeAll": false,
         "label": "datasource",
@@ -450,12 +778,12 @@
     ]
   },
   "time": {
-    "from": "now-1h",
+    "from": "now-30m",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "",
   "title": "Data Shift Monitoring",
   "uid": "data-shift-monitoring",
-  "version": 1
+  "version": 11
 }
